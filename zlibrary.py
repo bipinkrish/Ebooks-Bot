@@ -225,6 +225,10 @@ class Zlibrary:
 
     def isLogin(self) -> bool:
         return self.__logged
+    
+    def getDownloadsLeft(self) -> int:
+        user_profile: dict = self.getProfile()["user"]
+        return user_profile.get("downloads_limit", 10) - user_profile.get("downloads_today", 0)
 
 
 from io import BytesIO
@@ -252,6 +256,10 @@ def handleZlib(Z: Zlibrary, app:Client,call:CallbackQuery,books):
         
     # download
         if call.data[0] == "D":
+            if Z.getDownloadsLeft() < 1:
+                app.answer_callback_query(call.id, "Zlibrary download limit reached for today")
+                return None
+    
             choose = int(call.data.replace("D",""))
             app.edit_message_text(call.message.chat.id, call.message.id, "__Downloading__")
 
@@ -277,8 +285,10 @@ def handleZlib(Z: Zlibrary, app:Client,call:CallbackQuery,books):
         Icont = Z.getImage(books[choose])
         thumbfile = str(call.message.chat.id) + "_Z.jpg"
         with open(thumbfile, "wb") as file: file.write(Icont)
-        app.edit_message_media(call.message.chat.id, call.message.id,
+        try: app.edit_message_media(call.message.chat.id, call.message.id,
             InputMediaPhoto(thumbfile,getZlibText(books,choose)),
             reply_markup=getButtons(choose))
+        except Exception as e:
+            print(e)
         remove(thumbfile)
         return False

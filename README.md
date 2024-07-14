@@ -14,14 +14,29 @@
 
 ## Optional Variables
 
-* for Zlibrary
+* for **Zlibrary**
 
-    `REMIX_ID` & `REMIX_KEY` 
-    
-    OR
-    
-    `Z_EMAIL` & `Z_PASS`
+    `REMIX_ID` & `REMIX_KEY` OR `Z_EMAIL` & `Z_PASS`
 
-* for OpenLibrary
+* for **Zlibrary Multi**
+
+    `ZLIB_MULTI`
+
+    _Below is an eample config, you can use either of the logins combination_
+
+```json
+    "ZLIB_MULTI": [
+        {
+            "email": "xxx@mail.com",
+            "password": "ABCDEF"
+        },
+        {
+            "remix_id": 12345678,
+            "remix_key": "24jhbf32hj2b3hjb"
+        }
+    ]
+```
+
+* for **OpenLibrary**
 
     `IA_EMAIL` & `IA_PASS`

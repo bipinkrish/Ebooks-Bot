@@ -43,7 +43,8 @@ def getButtonsIA(books, choose=0,):
 
 def getSrc():
     return InlineKeyboardMarkup(
-        [[
-            InlineKeyboardButton(
-                text='Source Code', url="https://github.com/bipinkrish/Ebooks-Bot")
-        ]])
+        [   
+            [InlineKeyboardButton(text='Source Code 🌐', url="https://github.com/bipinkrish/Ebooks-Bot")],
+            [InlineKeyboardButton(text='Donate Me 💸', url="https://github.com/sponsors/bipinkrish")],
+        ]
+    )

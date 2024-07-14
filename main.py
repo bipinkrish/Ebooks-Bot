@@ -1,8 +1,8 @@
 import os
 import pyrogram
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup,InlineKeyboardButton, InputMediaPhoto
-from buttons import getButtons,getButtonsIA, getSrc
+from pyrogram.types import InlineKeyboardMarkup,InlineKeyboardButton, InputMediaPhoto, Message
+from buttons import getButtons, getButtonsIA, getSrc
 import pdfdrive
 import libgen
 import annas
@@ -11,6 +11,7 @@ import zlibrary
 from openlibrary import openlibrary
 import scihub
 import json
+from typing import List, Dict
 
 
 with open('config.json', 'r') as f: data = json.load(f)
@@ -33,10 +34,46 @@ remix_id = getenv("REMIX_ID")
 remix_key = getenv("REMIX_KEY")
 zemail = getenv("Z_EMAIL")
 zpass = getenv("Z_PASS")
-if remix_id is not None and remix_key is not None: Z = zlibrary.Zlibrary(remix_userid=remix_id, remix_userkey=remix_key)
-elif zemail is not None and zpass is not None: Z = zlibrary.Zlibrary(email=zemail, password=zpass)
-else: Z = None
-if Z and not Z.isLogin(): raise("Wrong Credentials")
+zlib_multi: List[Dict] = getenv("ZLIB_MULTI")
+
+Z: zlibrary.Zlibrary = None
+ZM: List[zlibrary.Zlibrary] = []
+Z_INDEX = -1
+
+def loopZ():
+    if not ZM: return
+    global Z, Z_INDEX
+
+    for _ in range(len(ZM)):        
+        Z_INDEX += 1
+        Z = ZM[Z_INDEX % len(ZM)]
+
+        downloads_left = Z.getDownloadsLeft()
+        if downloads_left > 0:
+            print("Switching Zlibrary account")
+            print("Switched to: ", Z._Zlibrary__email)
+            print("Downloads left: ", downloads_left)
+            break
+    else:
+        print("All Zlibarary accounts have 0 downloads left.")
+
+if not zlib_multi:
+    if remix_id is not None and remix_key is not None: Z = zlibrary.Zlibrary(remix_userid=remix_id, remix_userkey=remix_key)
+    elif zemail is not None and zpass is not None: Z = zlibrary.Zlibrary(email=zemail, password=zpass)
+    if Z and not Z.isLogin(): raise("Wrong Credentials")
+else:
+    for account in zlib_multi:
+        keys = account.keys()
+        if "email" in keys and "password" in keys:
+            login = zlibrary.Zlibrary(email=account["email"], password=account["password"])
+            if login.isLogin(): ZM.append(login)
+        elif "remix_id" in keys and "remix_key" in keys:
+            login = zlibrary.Zlibrary(remix_userid=account["remix_id"], remix_userkey=account["remix_key"])
+            if login.isLogin(): ZM.append(login)
+    
+    print("Zlibrary accounts loaded: ", len(ZM))
+    loopZ()
+    
 
 # open library
 iaemail = getenv("IA_EMAIL")
@@ -65,7 +102,7 @@ def isSite(calldata):
 
 
 @app.on_message(filters.command(["start","help"]))
-def echo(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
+def echo(client: Client, message: Message):
     app.send_message(message.chat.id,
         f"__Hello {message.from_user.mention}, \
 I am Ebooks Finder Bot, Just send me a name of the Book and I will get you results from \
@@ -76,11 +113,12 @@ I am Ebooks Finder Bot, Just send me a name of the Book and I will get you resul
 [Anna's Archive](https://annas-archive.org/), \
 [PdfDrive](https://pdfdrive.to), \
 and [eBook-Hunter](https://ebook-hunter.org/), \
-to right here OR send me ACSM file from IA to decrypt__", reply_to_message_id=message.id, disable_web_page_preview=True,)
+to right here OR send me ACSM file from IA to decrypt__", reply_to_message_id=message.id, disable_web_page_preview=True,
+reply_markup=getSrc())
 
 
-def handleASCM(file, message):
-    msg = app.send_message(message.chat.id, "__Processing__", reply_to_message_id=message.id)
+def handleASCM(file, message: Message):
+    msg: Message = app.send_message(message.chat.id, "__Processing__", reply_to_message_id=message.id)
     try: ofile = openlibrary.acsm(file,None)
     except: ofile is None
     os.remove(file)
@@ -186,7 +224,7 @@ def handle(client: pyrogram.client.Client, call: pyrogram.types.CallbackQuery):
             elif len(books) == 0:
                 app.send_message(message.chat.id,f"__Zlibrary : No results found__", reply_to_message_id=message.id)
             else:
-                msg = app.send_photo(message.chat.id, zlibrary.getImage(Z, books[0]),
+                msg: Message = app.send_photo(message.chat.id, zlibrary.getImage(Z, books[0]),
                     zlibrary.getZlibText(books), reply_to_message_id=message.id, reply_markup=getButtons())
                 storedata(msg.id,books,"zlib")    
 
@@ -246,6 +284,7 @@ def handle(client: pyrogram.client.Client, call: pyrogram.types.CallbackQuery):
     # zlibraray
     elif website == "zlib":
         downloded = zlibrary.handleZlib(Z,app,call,books)
+        if call.data[0] == "D": loopZ()
     
     # open lib
     elif website == "openlib":

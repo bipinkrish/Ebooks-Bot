@@ -1,11 +1,12 @@
 {
-    "TOKEN":null,
-    "HASH":null,
-    "ID":null,
-    "REMIX_ID":null,
-    "REMIX_KEY":null,
-    "Z_EMAIL":null,
-    "Z_PASS":null,
-    "IA_EMAIL":null,
-    "IA_PASS":null
+  "TOKEN": null,
+  "HASH": null,
+  "ID": null,
+  "REMIX_ID": null,
+  "REMIX_KEY": null,
+  "Z_EMAIL": null,
+  "Z_PASS": null,
+  "IA_EMAIL": null,
+  "IA_PASS": null,
+  "ZLIB_MULTI": []
 }
